@@ -7,7 +7,7 @@ const Blog = ({ blog, handleLike, handleDelete, username }) => {
 
   return (
     <Styled.BlogDiv>
-      <Link to={`/blogs/${blog.id}`}>
+      <Link data-testid="bloglink" to={`/blogs/${blog.id}`}>
         {blog.title} - {blog.author}
       </Link>
     </Styled.BlogDiv>

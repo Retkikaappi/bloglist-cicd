@@ -4,3 +4,7 @@ dist
 vite.config.js
 build
 backend/
+tests
+playwright.config.js
+test-results
+playwright-report
