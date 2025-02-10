@@ -1,0 +1,44 @@
+name: Bloglist healthcheck
+
+on:
+  schedule:
+    - cron: '53 3 * * 2,4,6'
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check if fly.io url responds
+        uses: jtalk/url-health-check-action@v4
+        with:
+          url: https://backend-withered-butterfly-1521.fly.dev
+          max-attempts: 2
+          retry-delay: 10s
+
+      - name: Discord webhook healthcheck
+        uses: sarisia/actions-status-discord@v1
+        if: success()
+        with:
+          status: ${{job.status}}
+          title: Healthcheck
+          username: FSO Notifier
+          color: '#00ff00'
+          nocontext: true
+          description: |
+            **Repository:** ${{ github.repository }}
+            Health check ok
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+
+      - name: Discord webhook healthcheck
+        if: failure()
+        uses: sarisia/actions-status-discord@v1
+        with:
+          status: ${{job.status}}
+          title: Healthcheck
+          username: FSO Notifier
+          color: '#ff0000'
+          nocontext: true
+          description: |
+            **Repository:** ${{ github.repository }}
+            Health check failed...
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
