@@ -15,6 +15,7 @@
   "author": "Joonas Nuolikoski",
   "license": "MIT",
   "devDependencies": {
+    "@flydotio/dockerfile": "^0.7.4",
     "@stylistic/eslint-plugin-js": "^2.12.1",
     "cross-env": "^7.0.3",
     "eslint": "^9.16.0",

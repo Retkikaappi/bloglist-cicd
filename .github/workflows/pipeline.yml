@@ -41,4 +41,90 @@ jobs:
           npx playwright test
 
       - name: run unit tests
-        run: cd backend && npm test
+        run: |
+          cd backend
+          npm test
+
+      - if: ${{ github.event_name == 'push' }}
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to fly.io
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          npm run build:ui
+          cd ../backend
+          flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+      - name: Discord webhook failure
+        uses: sarisia/actions-status-discord@v1
+        if: ${{ failure() && github.event_name == 'push'}}
+        with:
+          status: ${{job.status}}
+          title: Deployment pipeline
+          username: FSO Notifier
+          color: '#ff0000'
+          nocontext: true
+          description: |
+            - **Repository:** ${{ github.repository }}
+            - **Compare changes:** ${{ github.event.compare }}
+            - **Hash:** ${{ github.event.after }}
+            - **Committer:** ${{github.event.head_commit.author.username}}
+            - **Pusher:** ${{github.event.pusher.name}}
+            - **Head commit message:** ${{ github.event.head_commit.message }}
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+
+  tag_release:
+    needs: [deployment_pipeline]
+    runs-on: ubuntu-20.04
+    if: ${{ github.event_name == 'push' && !contains(toJson(github.event.commits.*.message) ,'#skip' )}}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@f278d49d30cdd8775cc3e7dd00b5ee11686ee297
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: patch
+
+      - name: Discord webhook tagging failure
+        uses: sarisia/actions-status-discord@v1
+        if: failure()
+        with:
+          status: ${{job.status}}
+          title: Tagging
+          username: FSO Notifier
+          color: '#ff0000'
+          nocontext: true
+          description: |
+            - **Repository:** ${{ github.repository }}
+            - **Compare changes:** ${{ github.event.compare }}
+            - **Hash:** ${{ github.event.after }}
+            - **Committer:** ${{github.event.head_commit.author.username}}
+            - **Pusher:** ${{github.event.pusher.name}}
+            - **Head commit message:** ${{ github.event.head_commit.message }}
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+
+  notifications:
+    needs: [tag_release]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Discord webhook success
+        uses: sarisia/actions-status-discord@v1
+        if: success()
+        with:
+          status: ${{job.status}}
+          title: Deployed & tagged
+          username: FSO Notifier
+          color: '#00ff00'
+          nocontext: true
+          description: |
+            - **Repository:** ${{ github.repository }}
+            - **Compare changes:** ${{ github.event.compare }}
+            - **Hash:** ${{ github.event.after }}
+            - **Committer:** ${{github.event.head_commit.author.username}}
+            - **Pusher:** ${{github.event.pusher.name}}
+            - **Head commit message:** ${{ github.event.head_commit.message }}
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
