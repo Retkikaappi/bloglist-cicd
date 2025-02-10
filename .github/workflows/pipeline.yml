@@ -51,6 +51,7 @@ jobs:
       - name: Deploy to fly.io
         if: ${{ github.event_name == 'push' }}
         run: |
+          cd backend
           npm run build:ui
           cd ../backend
           flyctl deploy --remote-only
