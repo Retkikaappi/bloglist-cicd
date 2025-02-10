@@ -21,17 +21,24 @@ jobs:
         with:
           node-version: '20'
 
-      - name: install deps
+      - name: install backend deps and lint
         run: |
           cd backend
           npm install
           npm run lint
-          cd ../frontend
+      - name: install frontend deps and lint
+        run: |
+          cd frontend
           npm install
           npx playwright install --with-deps
           npm run lint
 
       - name: run e2e tests
-        run: cd ../backend && npm start dev & cd ../frontend && npx playwright test
+        run: |
+          cd backend 
+          npm start dev 
+          cd ../frontend
+          npx playwright test
+
       - name: run unit tests
-        run: cd ../backend && npm test
+        run: cd backend && npm test
